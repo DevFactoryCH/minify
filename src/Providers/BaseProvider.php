@@ -283,7 +283,7 @@ abstract class BaseProvider implements Countable
     protected function getHashedFilename()
     {
         $publicPath = $this->publicPath;
-        return md5(implode('-', array_map(function($file) use ($publicPath) { return str_replace($publicPath, '', $file); }, $this->files)) . $this->hash_salt);
+        return 'min.' . md5(implode('-', array_map(function($file) use ($publicPath) { return str_replace($publicPath, '', $file); }, $this->files)) . $this->hash_salt);
     }
 
     /**
