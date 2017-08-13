@@ -25,5 +25,15 @@
       "Devfactory\\Minify\\": "src/"
     }
   },
-  "minimum-stability": "stable"
+  "minimum-stability": "stable",
+  "extra": {
+      "laravel": {
+          "providers": [
+            "Devfactory\\Minify\\MinifyServiceProvider"
+          ],
+          "aliases": {
+            "Minify": "Devfactory\\Minify\\Facades\\MinifyFacade"
+          }
+      }
+  }
 }
