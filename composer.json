@@ -1,9 +1,13 @@
 {
-  "name": "devfactory/minify",
+  "name": "guestisp/minify",
   "keywords": ["minify", "laravel5"],
   "description": "A package for minifying styles and javascript for laravel 5 ",
   "license": "MIT",
   "authors": [
+    {
+      "name": "Da Costa Alcindo",
+      "email": "alcindo.dacosta@devfactory.ch"
+    },
     {
       "name": "Da Costa Alcindo",
       "email": "alcindo.dacosta@devfactory.ch"
