@@ -27,7 +27,10 @@ class JavaScript extends BaseProvider implements MinifyInterface
      */
     public function tag($file, array $attributes)
     {
-        $attributes = array('src' => $file) + $attributes;
+        $attributes = array(
+            'type' => 'application/javascript',
+            'src'  => $file, 
+        ) + $attributes;
 
         return "<script {$this->attributes($attributes)}></script>" . PHP_EOL;
     }
