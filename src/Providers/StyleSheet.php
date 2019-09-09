@@ -97,5 +97,4 @@ class StyleSheet extends BaseProvider implements MinifyInterface
         }
         return str_replace($contentReplace, $contentReplaceWith, $content);
     }
-    }
 }
