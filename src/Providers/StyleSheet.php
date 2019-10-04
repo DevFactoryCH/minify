@@ -77,6 +77,11 @@ class StyleSheet extends BaseProvider implements MinifyInterface
         $folder             = str_replace(public_path(), '', $file);
         $folder             = str_replace(basename($folder), '', $folder);
         $content            = file_get_contents($file);
+        
+        if ($this->disable_url_correction) {
+            return $content;
+        }
+
         $contentReplace     = [];
         $contentReplaceWith = [];
         preg_match_all('/url\(([\s])?([\"|\'])?(.*?)([\"|\'])?([\s])?\)/i', $content, $matches, PREG_PATTERN_ORDER);

@@ -53,6 +53,7 @@ class MinifyServiceProvider extends ServiceProvider {
           'reverse_sort' => config('minify.config.reverse_sort'),
           'disable_mtime' => config('minify.config.disable_mtime'),
           'hash_salt' => config('minify.config.hash_salt'),
+          'disable_url_correction' => config('minify.config.disable_url_correction'),
         ),
         $app->environment()
       );
