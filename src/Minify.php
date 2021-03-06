@@ -166,6 +166,7 @@ class Minify
         $this->provider->minify();
       }
 
+    $this->onlyUrl = false;
     $this->fullUrl = false;
   }
 
