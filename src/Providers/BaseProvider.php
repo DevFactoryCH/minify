@@ -1,4 +1,6 @@
-<?php  namespace Devfactory\Minify\Providers;
+<?php
+
+namespace Devfactory\Minify\Providers;
 
 use Devfactory\Minify\Exceptions\CannotRemoveFileException;
 use Devfactory\Minify\Exceptions\CannotSaveFileException;
@@ -28,12 +30,12 @@ abstract class BaseProvider implements Countable
     /**
      * @var array
      */
-    protected $files = array();
+    protected $files = [];
 
     /**
      * @var array
      */
-    protected $headers = array();
+    protected $headers = [];
 
     /**
      * @var string
@@ -68,23 +70,22 @@ abstract class BaseProvider implements Countable
         $this->file = $file ?: new Filesystem;
 
         $this->publicPath = $publicPath ?: $_SERVER['DOCUMENT_ROOT'];
-        
+
         $this->disable_mtime = $config['disable_mtime'] ?: false;
         $this->hash_salt = $config['hash_salt'] ?: '';
         $this->disable_url_correction = @$config['disable_url_correction'] ?: false;
 
-        $value = function($key)
-        {
+        $value = function ($key) {
             return isset($_SERVER[$key]) ? $_SERVER[$key] : '';
         };
 
-        $this->headers = array(
-            'User-Agent'      => $value('HTTP_USER_AGENT'),
-            'Accept'          => $value('HTTP_ACCEPT'),
+        $this->headers = [
+            'User-Agent' => $value('HTTP_USER_AGENT'),
+            'Accept' => $value('HTTP_ACCEPT'),
             'Accept-Language' => $value('HTTP_ACCEPT_LANGUAGE'),
             'Accept-Encoding' => 'identity',
-            'Connection'      => 'close',
-        );
+            'Connection' => 'close',
+        ];
     }
 
     /**
@@ -97,8 +98,7 @@ abstract class BaseProvider implements Countable
 
         $this->checkDirectory();
 
-        if ($this->checkExistingFiles())
-        {
+        if ($this->checkExistingFiles()) {
             return false;
         }
 
@@ -115,18 +115,15 @@ abstract class BaseProvider implements Countable
      */
     public function add($file)
     {
-        if (is_array($file))
-        {
-            foreach ($file as $value) $this->add($value);
-        }
-        else if ($this->checkExternalFile($file))
-        {
+        if (is_array($file)) {
+            foreach ($file as $value) {
+                $this->add($value);
+            }
+        } elseif ($this->checkExternalFile($file)) {
             $this->files[] = $file;
-        }
-        else {
+        } else {
             $file = $this->publicPath . $file;
-            if (!file_exists($file))
-            {
+            if (!file_exists($file)) {
                 throw new FileNotExistException("File '{$file}' does not exist");
             }
 
@@ -143,8 +140,7 @@ abstract class BaseProvider implements Countable
     public function tags($baseUrl, $attributes)
     {
         $html = '';
-        foreach($this->files as $file)
-        {
+        foreach ($this->files as $file) {
             $file = $baseUrl . str_replace($this->publicPath, '', $file);
             $html .= $this->tag($file, $attributes);
         }
@@ -166,25 +162,24 @@ abstract class BaseProvider implements Countable
     protected function appendFiles()
     {
         foreach ($this->files as $file) {
-            if ($this->checkExternalFile($file))
-            {
-                if (strpos($file, '//') === 0) $file = 'http:' . $file;
+            if ($this->checkExternalFile($file)) {
+                if (strpos($file, '//') === 0) {
+                    $file = 'http:' . $file;
+                }
 
                 $headers = $this->headers;
-                foreach ($headers as $key => $value)
-                {
+                foreach ($headers as $key => $value) {
                     $headers[$key] = $key . ': ' . $value;
                 }
-                $context = stream_context_create(array('http' => array(
+                $context = stream_context_create(['http' => [
                     'ignore_errors' => true,
                     'header' => implode("\r\n", $headers),
-                )));
+                ]]);
 
-                $http_response_header = array(false);
+                $http_response_header = [false];
                 $contents = file_get_contents($file, false, $context);
 
-                if (strpos($http_response_header[0], '200') === false)
-                {
+                if (strpos($http_response_header[0], '200') === false) {
                     throw new FileNotExistException("File '{$file}' does not exist");
                 }
             } else {
@@ -211,16 +206,14 @@ abstract class BaseProvider implements Countable
      */
     protected function checkDirectory()
     {
-        if (!file_exists($this->outputDir))
-        {
-          // Try to create the directory
-          if (!$this->file->makeDirectory($this->outputDir, 0775, true)) {
-            throw new DirNotExistException("Buildpath '{$this->outputDir}' does not exist");
-          }
+        if (!file_exists($this->outputDir)) {
+            // Try to create the directory
+            if (!$this->file->makeDirectory($this->outputDir, 0775, true)) {
+                throw new DirNotExistException("Buildpath '{$this->outputDir}' does not exist");
+            }
         }
 
-        if (!is_writable($this->outputDir))
-        {
+        if (!is_writable($this->outputDir)) {
             throw new DirNotWritableException("Buildpath '{$this->outputDir}' is not writable");
         }
     }
@@ -250,15 +243,16 @@ abstract class BaseProvider implements Countable
      */
     protected function attributes($attributes)
     {
-        $html = array();
-        foreach ((array) $attributes as $key => $value)
-        {
+        $html = [];
+        foreach ((array) $attributes as $key => $value) {
             $element = $this->attributeElement($key, $value);
 
-            if ( ! is_null($element)) $html[] = $element;
+            if (!is_null($element)) {
+                $html[] = $element;
+            }
         }
 
-        $output = count($html) > 0 ? ' '.implode(' ', $html) : '';
+        $output = count($html) > 0 ? ' ' . implode(' ', $html) : '';
 
         return trim($output);
     }
@@ -272,13 +266,17 @@ abstract class BaseProvider implements Countable
      */
     protected function attributeElement($key, $value)
     {
-        if (is_numeric($key)) $key = $value;
+        if (is_numeric($key)) {
+            $key = $value;
+        }
 
-        if(is_bool($value))
+        if (is_bool($value)) {
             return $key;
+        }
 
-        if ( ! is_null($value))
-            return $key.'="'.htmlentities($value, ENT_QUOTES, 'UTF-8', false).'"';
+        if (!is_null($value)) {
+            return $key . '="' . htmlentities($value, ENT_COMPAT, 'UTF-8', false) . '"';
+        }
 
         return null;
     }
@@ -289,7 +287,7 @@ abstract class BaseProvider implements Countable
     protected function getHashedFilename()
     {
         $publicPath = $this->publicPath;
-        return md5(implode('-', array_map(function($file) use ($publicPath) { return str_replace($publicPath, '', $file); }, $this->files)) . $this->hash_salt);
+        return md5(implode('-', array_map(function ($file) use ($publicPath) { return str_replace($publicPath, '', $file); }, $this->files)) . $this->hash_salt);
     }
 
     /**
@@ -299,14 +297,11 @@ abstract class BaseProvider implements Countable
     {
         $time = 0;
 
-        foreach ($this->files as $file)
-        {
-            if ($this->checkExternalFile($file))
-            {
+        foreach ($this->files as $file) {
+            if ($this->checkExternalFile($file)) {
                 $userAgent = isset($this->headers['User-Agent']) ? $this->headers['User-Agent'] : '';
                 $time += hexdec(substr(md5($file . $userAgent), 0, 8));
-            }
-            else {
+            } else {
                 $time += filemtime($file);
             }
         }
@@ -322,11 +317,9 @@ abstract class BaseProvider implements Countable
         $pattern = $this->outputDir . $this->getHashedFilename() . '*';
         $find = glob($pattern);
 
-        if( is_array($find) && count($find) )
-        {
-            foreach ($find as $file)
-            {
-                if ( ! unlink($file) ) {
+        if (is_array($find) && count($find)) {
+            foreach ($find as $file) {
+                if (!unlink($file)) {
                     throw new CannotRemoveFileException("File '{$file}' cannot be removed");
                 }
             }
@@ -340,8 +333,7 @@ abstract class BaseProvider implements Countable
      */
     protected function put($minified)
     {
-        if(file_put_contents($this->outputDir . $this->filename, $minified) === false)
-        {
+        if (file_put_contents($this->outputDir . $this->filename, $minified) === false) {
             throw new CannotSaveFileException("File '{$this->outputDir}{$this->filename}' cannot be saved");
         }
 
