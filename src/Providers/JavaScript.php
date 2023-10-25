@@ -1,4 +1,6 @@
-<?php namespace Devfactory\Minify\Providers;
+<?php
+
+namespace Devfactory\Minify\Providers;
 
 use Devfactory\Minify\Contracts\MinifyInterface;
 use JShrink\Minifier;
@@ -27,7 +29,9 @@ class JavaScript extends BaseProvider implements MinifyInterface
      */
     public function tag($file, array $attributes)
     {
-        $attributes = array('src' => $file) + $attributes;
+        // dd($attributes);
+        // $attributes = array('src' => $file) + $attributes;
+        $attributes = array_merge(['src' => $file], $attributes);
 
         return "<script {$this->attributes($attributes)}></script>" . PHP_EOL;
     }
