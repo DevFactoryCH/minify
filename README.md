@@ -1,6 +1,6 @@
 # Minify
 
-[![Build Status](https://travis-ci.org/DevFactoryCH/minify.svg)](https://travis-ci.org/DevFactoryCH/minify)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/DevFactoryCH/minify/tests.yml)](https://github.com/DevFactoryCH/minify/actions/workflows/tests.yml)
 [![Latest Stable Version](https://poser.pugx.org/devfactory/minify/v/stable.svg)](https://packagist.org/packages/devfactory/minify)
 [![Total Downloads](https://poser.pugx.org/devfactory/minify/downloads.svg)](https://packagist.org/packages/devfactory/minify)
 [![License](https://poser.pugx.org/devfactory/minify/license.svg)](https://packagist.org/packages/devfactory/minify)
