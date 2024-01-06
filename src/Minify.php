@@ -1,259 +1,254 @@
-<?php  namespace Devfactory\Minify;
+<?php namespace Devfactory\Minify;
 
+use Devfactory\Minify\Exceptions\CannotRemoveFileException;
+use Devfactory\Minify\Exceptions\CannotSaveFileException;
+use Devfactory\Minify\Exceptions\DirNotExistException;
+use Devfactory\Minify\Exceptions\DirNotWritableException;
+use Devfactory\Minify\Exceptions\FileNotExistException;
 use Devfactory\Minify\Exceptions\InvalidArgumentException;
 use Devfactory\Minify\Providers\JavaScript;
 use Devfactory\Minify\Providers\StyleSheet;
-use RecursiveIteratorIterator;
+use FilesystemIterator;
+use Illuminate\Support\Facades\Request;
 use RecursiveDirectoryIterator;
-use Request;
+use RecursiveIteratorIterator;
 
 class Minify
 {
-  /**
-   * @var array
-   */
-  protected $config;
+    protected array $config;
 
-  /**
-   * @var array
-   */
-  protected $attributes = array();
+    protected array $attributes = [];
 
-  /**
-   * @var string
-   */
-  private $environment;
+    private string $environment;
 
-  /**
-   * @var
-   */
-  private $provider;
+    private StyleSheet|JavaScript $provider;
 
-  /**
-   * @var
-   */
-  private $buildPath;
+    private string $buildPath;
 
-  /**
-   * @var bool
-   */
-  private $fullUrl = false;
+    private bool $fullUrl = false;
 
-  /**
-   * @var bool
-   */
-  private $onlyUrl = false;
+    private bool $onlyUrl = false;
 
-  /**
-   * @var bool
-   */
-  private $buildExtension;
-   
+    private bool $buildExtension;
 
-  /**
-   * @param array $config
-   * @param string $environment
-   */
-  public function __construct(array $config, $environment) {
-    $this->checkConfiguration($config);
-
-    $this->config = $config;
-    $this->environment = $environment;
-  }
-
-  /**
-   * @param $file
-   * @param array $attributes
-   * @return string
-   */
-  public function javascript($file, $attributes = array()) {
-    $this->provider = new JavaScript(public_path(), ['hash_salt' => $this->config['hash_salt'], 'disable_mtime' => $this->config['disable_mtime']]);
-    $this->buildPath = $this->config['js_build_path'];
-    $this->attributes = $attributes;
-    $this->buildExtension = 'js';
-
-    $this->process($file);
-
-    return $this;
-  }
-
-  /**
-   * @param $file
-   * @param array $attributes
-   * @return string
-   */
-  public function stylesheet($file, $attributes = array()) {
-    $this->provider = new StyleSheet(public_path(), ['hash_salt' => $this->config['hash_salt'], 'disable_mtime' => $this->config['disable_mtime']]);
-    $this->buildPath = $this->config['css_build_path'];
-    $this->attributes = $attributes;
-    $this->buildExtension = 'css';
-
-    $this->process($file);
-
-    return $this;
-  }
-
-  /**
-   * @param $dir
-   * @param array $attributes
-   * @return string
-   */
-  public function stylesheetDir($dir, $attributes = array()) {
-    $this->provider = new StyleSheet(public_path(), ['hash_salt' => $this->config['hash_salt'], 'disable_mtime' => $this->config['disable_mtime']]);
-    $this->buildPath = $this->config['css_build_path'];
-    $this->attributes = $attributes;
-    $this->buildExtension = 'css';
-
-    return $this->assetDirHelper('css', $dir);
-  }
-
-  /**
-   * @param $dir
-   * @param array $attributes
-   * @return string
-   */
-  public function javascriptDir($dir, $attributes = array()) {
-    $this->provider = new JavaScript(public_path(), ['hash_salt' => $this->config['hash_salt'], 'disable_mtime' => $this->config['disable_mtime']]);
-    $this->buildPath = $this->config['js_build_path'];
-    $this->attributes = $attributes;
-    $this->buildExtension = 'js';
-
-    return $this->assetDirHelper('js', $dir);
-  }
-
-  /**
-   * @param $ext
-   * @param $dir
-   * @return string
-   */
-  private function assetDirHelper($ext, $dir) {
-    $files = array();
-
-    $itr_obj = new RecursiveDirectoryIterator(public_path().$dir);
-    $itr_obj->setFlags(RecursiveDirectoryIterator::SKIP_DOTS);
-    $dir_obj = new RecursiveIteratorIterator($itr_obj);
-
-    foreach ($dir_obj as $fileinfo)
-      {
-        if (!$fileinfo->isDir() && ($filename = $fileinfo->getFilename()) && (pathinfo($filename, PATHINFO_EXTENSION) == $ext) && (strlen($fileinfo->getFilename()) < 30))
-          {
-            $files[] = str_replace(public_path(), '', $fileinfo);
-          }
-      }
-
-    if (count($files) > 0)
-      {
-          if($this->config['reverse_sort']) {
-              rsort($files);
-          }
-          else {
-              sort($files);
-          }
-        $this->process($files);
-      }
-
-    return $this;
-  }
-
-  /**
-   * @param $file
-   */
-  private function process($file) {
-    $this->provider->add($file);
-
-    if($this->minifyForCurrentEnvironment() && $this->provider->make($this->buildPath))
-      {
-        $this->provider->minify();
-      }
-
-    $this->fullUrl = false;
-  }
-
-  /**
-   * @return mixed
-   */
-  protected function render()
-  {
-    $baseUrl = $this->fullUrl ? $this->getBaseUrl() : '';
-    if (!$this->minifyForCurrentEnvironment())
-      {
-        return $this->provider->tags($baseUrl, $this->attributes);
-      }
-
-    if( $this->buildExtension == 'js')
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function __construct(array $config, string $environment)
     {
-        $buildPath =  isset($this->config['js_url_path']) ? $this->config['js_url_path'] : $this->buildPath;
+        $this->checkConfiguration($config);
+
+        $this->config = $config;
+        $this->environment = $environment;
     }
-    else# if( $this->buildExtension == 'css')
+
+    public function initialiseJavascript(array $attributes): void
     {
-        $buildPath =  isset($this->config['css_url_path']) ? $this->config['css_url_path'] : $this->buildPath;        
+        $this->provider = new JavaScript(public_path(), [
+            'hash_salt' => $this->config['hash_salt'],
+            'disable_mtime' => $this->config['disable_mtime']
+        ]);
+        $this->buildPath = $this->config['js_build_path'];
+        $this->attributes = $attributes;
+        $this->buildExtension = 'js';
     }
-    
-    $filename = $baseUrl . $buildPath  . $this->provider->getFilename();
 
-    if ($this->onlyUrl) {
-      return $filename;
+    private function initialiseStylesheet(array $attributes): void
+    {
+        $this->provider = new StyleSheet(public_path(), [
+            'hash_salt' => $this->config['hash_salt'],
+            'disable_mtime' => $this->config['disable_mtime']
+        ]);
+        $this->buildPath = $this->config['css_build_path'];
+        $this->attributes = $attributes;
+        $this->buildExtension = 'css';
     }
 
-    return $this->provider->tag($filename, $this->attributes);
-  }
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    public function javascript(string $file, array $attributes = []): string
+    {
+        $this->initialiseJavascript($attributes);
 
-  /**
-   * @return bool
-   */
-  protected function minifyForCurrentEnvironment()
-  {
-    return !in_array($this->environment, $this->config['ignore_environments']);
-  }
+        $this->process($file);
 
-  /**
-   * @return string
-   */
-  public function withFullUrl() {
-    $this->fullUrl = true;
-
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function onlyUrl()
-  {
-    $this->onlyUrl = true;
-
-    return $this;
-  }
-
-  /**
-   * @return string
-   */
-  public function __toString() {
-    return $this->render();
-  }
-
-  /**
-   * @param array $config
-   * @throws Exceptions\InvalidArgumentException
-   * @return array
-   */
-  private function checkConfiguration(array $config) {
-    if(!isset($config['css_build_path']) || !is_string($config['css_build_path']))
-      throw new InvalidArgumentException("Missing css_build_path field");
-    if(!isset($config['js_build_path']) || !is_string($config['js_build_path']))
-      throw new InvalidArgumentException("Missing js_build_path field");
-    if(!isset($config['ignore_environments']) || !is_array($config['ignore_environments']))
-      throw new InvalidArgumentException("Missing ignore_environments field");
-  }
-
-  /**
-   * @return string
-   */
-  private function getBaseUrl() {
-    if (is_null($this->config['base_url']) || (trim($this->config['base_url']) == '')) {
-      return Request::root();
-    } else {
-      return $this->config['base_url'];
+        return $this;
     }
-  }
+
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    public function stylesheet(string $file, array $attributes = []): string
+    {
+        $this->initialiseStylesheet($attributes);
+
+        $this->process($file);
+
+        return $this;
+    }
+
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    public function stylesheetDir(string $dir, array $attributes = []): string
+    {
+        $this->initialiseStylesheet($attributes);
+
+        return $this->assetDirHelper('css', $dir);
+    }
+
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    public function javascriptDir(string $dir, array $attributes = []): string
+    {
+        $this->initialiseJavascript($attributes);
+
+        return $this->assetDirHelper('js', $dir);
+    }
+
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    private function assetDirHelper(string $ext, string $dir): string
+    {
+        $files = [];
+
+        $itr_obj = new RecursiveDirectoryIterator(public_path() . $dir);
+        $itr_obj->setFlags(FilesystemIterator::SKIP_DOTS);
+        $dir_obj = new RecursiveIteratorIterator($itr_obj);
+
+        foreach ($dir_obj as $fileinfo) {
+            if (!$fileinfo->isDir() && ($filename = $fileinfo->getFilename()) && (pathinfo($filename, PATHINFO_EXTENSION) == $ext) && (strlen($fileinfo->getFilename()) < 30)) {
+                $files[] = str_replace(public_path(), '', $fileinfo);
+            }
+        }
+
+        if (count($files) > 0) {
+            if ($this->config['reverse_sort']) {
+                rsort($files);
+            } else {
+                sort($files);
+            }
+            $this->process($files);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @throws DirNotExistException
+     * @throws DirNotWritableException
+     * @throws CannotSaveFileException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
+     */
+    private function process(array|string $file): void
+    {
+        $this->provider->add($file);
+
+        if ($this->minifyForCurrentEnvironment() && $this->provider->make($this->buildPath)) {
+            $this->provider->minify();
+        }
+
+        $this->fullUrl = false;
+    }
+
+    protected function render(): string
+    {
+        $baseUrl = $this->fullUrl ? $this->getBaseUrl() : '';
+        if (!$this->minifyForCurrentEnvironment()) {
+            return $this->provider->tags($baseUrl, $this->attributes);
+        }
+
+        if ($this->buildExtension == 'js') {
+            $buildPath = $this->config['js_url_path'] ?? $this->buildPath;
+        } else# if( $this->buildExtension == 'css')
+        {
+            $buildPath = $this->config['css_url_path'] ?? $this->buildPath;
+        }
+
+        $filename = $baseUrl . $buildPath . $this->provider->getFilename();
+
+        if ($this->onlyUrl) {
+            return $filename;
+        }
+
+        return $this->provider->tag($filename, $this->attributes);
+    }
+
+    protected function minifyForCurrentEnvironment(): bool
+    {
+        return !in_array($this->environment, $this->config['ignore_environments']);
+    }
+
+    public function withFullUrl(): static
+    {
+        $this->fullUrl = true;
+
+        return $this;
+    }
+
+    public function onlyUrl(): static
+    {
+        $this->onlyUrl = true;
+
+        return $this;
+    }
+
+    public function __toString()
+    {
+        return $this->render();
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function checkConfiguration(array $config): void
+    {
+        if (!isset($config['css_build_path']) || !is_string($config['css_build_path']))
+        {
+            throw new InvalidArgumentException('Missing css_build_path field');
+        }
+
+        if (!isset($config['js_build_path']) || !is_string($config['js_build_path']))
+        {
+            throw new InvalidArgumentException('Missing js_build_path field');
+        }
+
+        if (!isset($config['ignore_environments']) || !is_array($config['ignore_environments']))
+        {
+            throw new InvalidArgumentException('Missing ignore_environments field');
+        }
+    }
+
+    private function getBaseUrl(): string
+    {
+        if (is_null($this->config['base_url']) || (trim($this->config['base_url']) == '')) {
+            return Request::root();
+        } else {
+            return $this->config['base_url'];
+        }
+    }
 }
