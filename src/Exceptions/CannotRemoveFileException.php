@@ -1,3 +1,5 @@
 <?php  namespace Devfactory\Minify\Exceptions;
 
-class CannotRemoveFileException extends \Exception{}
+use Exception;
+
+class CannotRemoveFileException extends Exception {}
