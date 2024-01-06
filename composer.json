@@ -4,7 +4,7 @@
         "minify",
         "laravel5"
     ],
-    "description": "A package for minifying styles and javascript for laravel 5 ",
+    "description": "A package for minifying styles and javascript for laravel 5",
     "license": "MIT",
     "authors": [
         {
@@ -20,8 +20,8 @@
         "illuminate/support": "^10.0"
     },
     "require-dev": {
-        "phpspec/phpspec": "2.0.0|^7.3",
-        "mikey179/vfsstream": "1.2.*|^1.6"
+        "phpspec/phpspec": "^7.4",
+        "mikey179/vfsstream": "^1.6"
     },
     "autoload": {
         "psr-0": {
