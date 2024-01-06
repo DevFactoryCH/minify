@@ -1,87 +1,90 @@
 <?php namespace spec\Devfactory\Minify\Providers;
 
+use Devfactory\Minify\Exceptions\DirNotExistException;
+use Devfactory\Minify\Exceptions\DirNotWritableException;
+use Devfactory\Minify\Exceptions\FileNotExistException;
+use Devfactory\Minify\Providers\StyleSheet;
 use PhpSpec\ObjectBehavior;
-use Prophecy\Argument;
 use Prophecy\Prophet;
 use org\bovigo\vfs\vfsStream;
 use Illuminate\Filesystem\Filesystem;
 
 class StyleSheetSpec extends ObjectBehavior
 {
-    function it_is_initializable()
+    function it_is_initializable(): void
     {
-        $this->shouldHaveType('Devfactory\Minify\Providers\StyleSheet');
+        $this->shouldHaveType(StyleSheet::class);
     }
 
-    function it_adds_one_file()
+    function it_adds_one_file(): void
     {
-        vfsStream::setup('css',null, array(
+        vfsStream::setup('css', null, [
             '1.css' => 'a',
-        ));
+        ]);
 
         $this->add(VfsStream::url('css'));
         $this->shouldHaveCount(1);
     }
 
-    function it_adds_multiple_files()
+    function it_adds_multiple_files(): void
     {
-        vfsStream::setup('root',null, array(
+        vfsStream::setup('root', null, [
             '1.css' => 'a',
             '2.css' => 'b',
-        ));
+        ]);
 
-        $this->add(array(
+        $this->add([
             VfsStream::url('root/1.css'),
             VfsStream::url('root/2.css')
-        ));
+        ]);
 
         $this->shouldHaveCount(2);
     }
 
-    function it_adds_custom_attributes()
+    function it_adds_custom_attributes(): void
     {
-        $this->tag('file', array('foobar' => 'baz', 'defer' => true))
+        $this->tag('file', ['foobar' => 'baz', 'defer' => true])
             ->shouldReturn('<link href="file" rel="stylesheet" foobar="baz" defer>' . PHP_EOL);
     }
 
-    function it_adds_without_custom_attributes()
+    function it_adds_without_custom_attributes(): void
     {
         $this->tag('file')
             ->shouldReturn('<link href="file" rel="stylesheet">' . PHP_EOL);
     }
 
-    function it_throws_exception_when_file_not_exists()
+    function it_throws_exception_when_file_not_exists(): void
     {
-        $this->shouldThrow('Devfactory\Minify\Exceptions\FileNotExistException')
+        $this->shouldThrow(FileNotExistException::class)
             ->duringAdd('foobar');
     }
 
-    function it_should_throw_exception_when_buildpath_not_exist()
+    function it_should_throw_exception_when_buildpath_not_exist(): void
     {
-      $prophet = new Prophet;
-      $file = $prophet->prophesize('Illuminate\Filesystem\Filesystem');
-      $file->makeDirectory('dir_bar', 0775, true)->willReturn(false);
+        $prophet = new Prophet;
+        $file = $prophet->prophesize(Filesystem::class);
+        $file->makeDirectory('dir_bar', 0775, true)->willReturn(false);
 
-      $this->beConstructedWith(null, null, $file);
-      $this->shouldThrow('Devfactory\Minify\Exceptions\DirNotExistException')
+        $this->beConstructedWith(null, null, $file);
+        $this->shouldThrow(DirNotExistException::class)
             ->duringMake('dir_bar');
     }
 
-    function it_should_throw_exception_when_buildpath_not_writable()
+    function it_should_throw_exception_when_buildpath_not_writable(): void
     {
-        vfsStream::setup('css',0555, array());
+        vfsStream::setup('css', 0555);
 
-        $this->shouldThrow('Devfactory\Minify\Exceptions\DirNotWritableException')
+        $this->shouldThrow(DirNotWritableException::class)
             ->duringMake(vfsStream::url('css'));
     }
 
-    function it_minifies_multiple_files()
+    function it_minifies_multiple_files(): void
     {
-        vfsStream::setup('root',null, array(
-            'output' => array(),
+        vfsStream::setup('root', null, [
+            'output' => [],
             '1.css' => 'a',
             '2.css' => 'b',
-        ));
+        ]);
 
         $this->add(vfsStream::url('root/1.css'));
         $this->add(vfsStream::url('root/2.css'));
