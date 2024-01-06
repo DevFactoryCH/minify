@@ -31,7 +31,7 @@ You can use the `Minify` facade anywhere in your application.
 To publish the config file:
 
 ```shell
-php artisan vendor:publish
+php artisan vendor:publish --provider="Devfactory\Minify\MinifyServiceProvider" --tag="config"
 ```
 
 
