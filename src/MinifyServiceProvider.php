@@ -1,89 +1,53 @@
 <?php namespace Devfactory\Minify;
 
-use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
 
-class MinifyServiceProvider extends ServiceProvider {
+class MinifyServiceProvider extends ServiceProvider
+{
+    /**
+     * Bootstrap the application configuration.
+     */
+    public function boot(): void
+    {
+        $this->publishes([
+            __DIR__ . '/config/minify.php' => config_path('minify.php'),
+        ]);
+    }
 
-  /**
-   * Indicates if loading of the provider is deferred.
-   *
-   * @var bool
-   */
-  protected $defer = false;
+    /**
+     * Register the service provider.
+     */
+    public function register(): void
+    {
+        // Register container binding
+        $this->app->singleton('minify', function ($app) {
+            return new Minify(
+                [
+                    'css_build_path' => config('minify.css_build_path'),
+                    'css_url_path' => config('minify.css_url_path'),
+                    'js_build_path' => config('minify.js_build_path'),
+                    'js_url_path' => config('minify.js_url_path'),
+                    'ignore_environments' => config('minify.ignore_environments'),
+                    'base_url' => config('minify.base_url'),
+                    'reverse_sort' => config('minify.reverse_sort'),
+                    'disable_mtime' => config('minify.disable_mtime'),
+                    'hash_salt' => config('minify.hash_salt'),
+                ],
+                $app->environment()
+            );
+        });
 
-  /**
-   * Bootstrap the application events.
-   *
-   * @return void
-   */
-  public function boot()
-  {
-    $this->publishConfig();
-  }
+        // Merge config with config from application
+        $this->mergeConfigFrom(
+            __DIR__ . '/config/minify.php', 'minify'
+        );
+    }
 
-  /**
-   * Register the service provider.
-   *
-   * @return void
-   */
-  public function register()
-  {
-
-    $this->registerServices();
-    $this->mergeConfig();
-
-  }
-
-  /**
-   * Register the package services.
-   *
-   * @return void
-   */
-  protected function registerServices() {
-    $this->app->singleton('minify', function ($app) {
-      return new Minify(
-        array(
-          'css_build_path' => config('minify.config.css_build_path'),
-          'css_url_path' => config('minify.config.css_url_path'),
-          'js_build_path' => config('minify.config.js_build_path'),
-          'js_url_path' => config('minify.config.js_url_path'),
-          'ignore_environments' => config('minify.config.ignore_environments'),
-          'base_url' => config('minify.config.base_url'),
-          'reverse_sort' => config('minify.config.reverse_sort'),
-          'disable_mtime' => config('minify.config.disable_mtime'),
-          'hash_salt' => config('minify.config.hash_salt'),
-        ),
-        $app->environment()
-      );
-    });
-  }
-
-  /**
-   * Publish the package configuration
-   */
-  protected function publishConfig() {
-    $this->publishes([
-       __DIR__ . '/config/config.php' => config_path('minify.config.php'),
-    ]);
-  }
-
-  /**
-   * Merge media config with users.
-   */
-  private function mergeConfig() {
-    $this->mergeConfigFrom(
-      __DIR__ . '/config/config.php', 'minify.config'
-    );
-  }
-
-  /**
-   * Get the services provided by the provider.
-   *
-   * @return array
-   */
-  public function provides()
-  {
-    return array('minify');
-  }
+    /**
+     * Get the services provided by the provider.
+     */
+    public function provides(): array
+    {
+        return ['minify'];
+    }
 }
