@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
 
     /*
     |--------------------------------------------------------------------------
@@ -24,9 +24,9 @@ return array(
     |
     */
 
-    'ignore_environments' => array(
+    'ignore_environments' => [
 	    'local',
-    ),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -34,7 +34,7 @@ return array(
     |--------------------------------------------------------------------------
     |
     | Minify is an extension that can minify your css files into one build file.
-    | The css_builds_path property is the location where the builded files are
+    | The css_builds_path property is the location where the built files are
     | stored. This is relative to your public path. Notice the trailing slash.
     | Note that this directory must be writeable.
     |
@@ -49,7 +49,7 @@ return array(
     |--------------------------------------------------------------------------
     |
     | Minify is an extension that can minify your js files into one build file.
-    | The js_build_path property is the location where the builded files are
+    | The js_build_path property is the location where the built files are
     | stored. This is relative to your public path. Notice the trailing slash.
     | Note that this directory must be writeable.
     |
@@ -77,8 +77,8 @@ return array(
     |--------------------------------------------------------------------------
     |
     | You can set the base URL for the links generated with the configuration
-    | value. By default if empty HTTP_HOST would be used.
+    | value. By default, if empty HTTP_HOST would be used.
     |
     */
 	'base_url' => ''
-);
+];
