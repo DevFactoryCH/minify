@@ -6,10 +6,8 @@ class MinifyFacade extends Facade
 {
     /**
      * Name of the binding in the IoC container
-     *
-     * @return string
      */
-    protected static function getFacadeAccessor()
+    protected static function getFacadeAccessor(): string
     {
         return 'minify';
     }
