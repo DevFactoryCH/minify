@@ -1,3 +1,5 @@
 <?php  namespace Devfactory\Minify\Exceptions;
 
-class DirNotWritableException extends \Exception {}
+use Exception;
+
+class DirNotWritableException extends Exception {}
