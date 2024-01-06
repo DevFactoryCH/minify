@@ -1,4 +1,4 @@
-<?php  namespace Devfactory\Minify\Providers;
+<?php namespace Devfactory\Minify\Providers;
 
 use Devfactory\Minify\Exceptions\CannotRemoveFileException;
 use Devfactory\Minify\Exceptions\CannotSaveFileException;
@@ -10,82 +10,62 @@ use Countable;
 
 abstract class BaseProvider implements Countable
 {
-    /**
-     * @var string
-     */
-    protected $outputDir;
+    protected string $outputDir;
 
-    /**
-     * @var string
-     */
-    protected $appended = '';
+    protected string $appended = '';
 
-    /**
-     * @var string
-     */
-    protected $filename = '';
+    protected string $filename = '';
 
-    /**
-     * @var array
-     */
-    protected $files = array();
+    protected array $files = [];
 
-    /**
-     * @var array
-     */
-    protected $headers = array();
+    protected array $headers = [];
 
-    /**
-     * @var string
-     */
-    private $publicPath;
+    private string $publicPath;
 
-    /**
-     * @var Illuminate\Foundation\Filesystem
-     */
-    protected $file;
+    protected Filesystem $file;
 
-    /**
-     * @var boolean
-     */
-    private $disable_mtime;
+    private bool $disable_mtime;
 
-    /**
-     * @var string
-     */
-    private $hash_salt;
+    private string $hash_salt;
 
-    /**
-     * @param null $publicPath
-     */
-    public function __construct($publicPath = null, $config = null, Filesystem $file = null)
+    public function __construct(?string $publicPath = null, ?array $config = null, ?Filesystem $file = null)
     {
         $this->file = $file ?: new Filesystem;
 
         $this->publicPath = $publicPath ?: $_SERVER['DOCUMENT_ROOT'];
 
-        $this->disable_mtime = $config['disable_mtime'] ?: false;
-        $this->hash_salt = $config['hash_salt'] ?: '';
+        if (!is_array($config))
+        {
+            $this->disable_mtime = false;
+            $this->hash_salt = '';
+        }
+        else
+        {
+            $this->disable_mtime = $config['disable_mtime'] ?: false;
+            $this->hash_salt = $config['hash_salt'] ?: '';
+        }
 
         $value = function($key)
         {
-            return isset($_SERVER[$key]) ? $_SERVER[$key] : '';
+            return $_SERVER[$key] ?? '';
         };
 
-        $this->headers = array(
+        $this->headers = [
             'User-Agent'      => $value('HTTP_USER_AGENT'),
             'Accept'          => $value('HTTP_ACCEPT'),
             'Accept-Language' => $value('HTTP_ACCEPT_LANGUAGE'),
             'Accept-Encoding' => 'identity',
             'Connection'      => 'close',
-        );
+        ];
     }
 
     /**
-     * @param $outputDir
-     * @return bool
+     * @throws DirNotWritableException
+     * @throws DirNotExistException
+     * @throws CannotRemoveFileException
+     * @throws FileNotExistException
      */
-    public function make($outputDir)
+    public function make(string $outputDir): bool
     {
         $this->outputDir = $this->publicPath . $outputDir;
 
@@ -103,11 +83,9 @@ abstract class BaseProvider implements Countable
     }
 
     /**
-     * @param  $file
-     * @return void
-     * @throws \Devfactory\Minify\Exceptions\FileNotExistException
+     * @throws FileNotExistException
      */
-    public function add($file)
+    public function add(array|string $file): void
     {
         if (is_array($file))
         {
@@ -128,13 +106,7 @@ abstract class BaseProvider implements Countable
         }
     }
 
-    /**
-     * @param      $baseUrl
-     * @param $attributes
-     *
-     * @return string
-     */
-    public function tags($baseUrl, $attributes)
+    public function tags(string $baseUrl, array $attributes): string
     {
         $html = '';
         foreach($this->files as $file)
@@ -146,18 +118,15 @@ abstract class BaseProvider implements Countable
         return $html;
     }
 
-    /**
-     * @return int
-     */
-    public function count()
+    public function count(): int
     {
         return count($this->files);
     }
 
     /**
-     * @throws \Devfactory\Minify\Exceptions\FileNotExistException
+     * @throws FileNotExistException
      */
-    protected function appendFiles()
+    protected function appendFiles(): void
     {
         foreach ($this->files as $file) {
             if ($this->checkExternalFile($file))
@@ -189,10 +158,7 @@ abstract class BaseProvider implements Countable
         }
     }
 
-    /**
-     * @return bool
-     */
-    protected function checkExistingFiles()
+    protected function checkExistingFiles(): bool
     {
         $this->buildMinifiedFilename();
 
@@ -200,10 +166,10 @@ abstract class BaseProvider implements Countable
     }
 
     /**
-     * @throws \Devfactory\Minify\Exceptions\DirNotWritableException
-     * @throws \Devfactory\Minify\Exceptions\DirNotExistException
+     * @throws DirNotWritableException
+     * @throws DirNotExistException
      */
-    protected function checkDirectory()
+    protected function checkDirectory(): void
     {
         if (!file_exists($this->outputDir))
         {
@@ -219,33 +185,23 @@ abstract class BaseProvider implements Countable
         }
     }
 
-    /**
-     * @param  string  $file
-     * @return bool
-     */
-    protected function checkExternalFile($file)
+    protected function checkExternalFile(string $file): bool
     {
         return preg_match('/^(https?:)?\/\//', $file);
     }
 
-    /**
-     * @return string
-     */
-    protected function buildMinifiedFilename()
+    protected function buildMinifiedFilename(): void
     {
         $this->filename = $this->getHashedFilename() . (($this->disable_mtime) ? '' : $this->countModificationTime()) . static::EXTENSION;
     }
 
     /**
      * Build an HTML attribute string from an array.
-     *
-     * @param  array  $attributes
-     * @return string
      */
-    protected function attributes($attributes)
+    protected function attributes(array $attributes): string
     {
-        $html = array();
-        foreach ((array) $attributes as $key => $value)
+        $html = [];
+        foreach ($attributes as $key => $value)
         {
             $element = $this->attributeElement($key, $value);
 
@@ -259,12 +215,8 @@ abstract class BaseProvider implements Countable
 
     /**
      * Build a single attribute element.
-     *
-     * @param  string|integer $key
-     * @param  string|boolean $value
-     * @return string|null
      */
-    protected function attributeElement($key, $value)
+    protected function attributeElement(mixed $key, mixed $value): mixed
     {
         if (is_numeric($key)) $key = $value;
 
@@ -277,19 +229,13 @@ abstract class BaseProvider implements Countable
         return null;
     }
 
-    /**
-     * @return string
-     */
-    protected function getHashedFilename()
+    protected function getHashedFilename(): string
     {
         $publicPath = $this->publicPath;
         return md5(implode('-', array_map(function($file) use ($publicPath) { return str_replace($publicPath, '', $file); }, $this->files)) . $this->hash_salt);
     }
 
-    /**
-     * @return int
-     */
-    protected function countModificationTime()
+    protected function countModificationTime(): int
     {
         $time = 0;
 
@@ -297,7 +243,7 @@ abstract class BaseProvider implements Countable
         {
             if ($this->checkExternalFile($file))
             {
-                $userAgent = isset($this->headers['User-Agent']) ? $this->headers['User-Agent'] : '';
+                $userAgent = $this->headers['User-Agent'] ?? '';
                 $time += hexdec(substr(md5($file . $userAgent), 0, 8));
             }
             else {
@@ -309,9 +255,9 @@ abstract class BaseProvider implements Countable
     }
 
     /**
-     * @throws \Devfactory\Minify\Exceptions\CannotRemoveFileException
+     * @throws CannotRemoveFileException
      */
-    protected function removeOldFiles()
+    protected function removeOldFiles(): void
     {
         $pattern = $this->outputDir . $this->getHashedFilename() . '*';
         $find = glob($pattern);
@@ -328,11 +274,9 @@ abstract class BaseProvider implements Countable
     }
 
     /**
-     * @param $minified
-     * @return string
-     * @throws \Devfactory\Minify\Exceptions\CannotSaveFileException
+     * @throws CannotSaveFileException
      */
-    protected function put($minified)
+    protected function put(mixed $minified): string
     {
         if(file_put_contents($this->outputDir . $this->filename, $minified) === false)
         {
@@ -342,18 +286,12 @@ abstract class BaseProvider implements Countable
         return $this->filename;
     }
 
-    /**
-     * @return string
-     */
-    public function getAppended()
+    public function getAppended(): string
     {
         return $this->appended;
     }
 
-    /**
-     * @return string
-     */
-    public function getFilename()
+    public function getFilename(): string
     {
         return $this->filename;
     }
