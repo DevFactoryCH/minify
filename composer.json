@@ -24,6 +24,9 @@
         "mikey179/vfsstream": "1.2.*|^1.6"
     },
     "autoload": {
+        "psr-0": {
+            "": "src/"
+        },
         "psr-4": {
             "Devfactory\\Minify\\": "src/"
         }
