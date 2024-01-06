@@ -1,89 +1,91 @@
 <?php namespace spec\Devfactory\Minify\Providers;
 
+use Devfactory\Minify\Exceptions\DirNotExistException;
+use Devfactory\Minify\Exceptions\DirNotWritableException;
+use Devfactory\Minify\Exceptions\FileNotExistException;
+use Devfactory\Minify\Providers\JavaScript;
 use PhpSpec\ObjectBehavior;
-use Prophecy\Argument;
 use Prophecy\Prophet;
 use org\bovigo\vfs\vfsStream;
 use Illuminate\Filesystem\Filesystem;
 
 
-
 class JavaScriptSpec extends ObjectBehavior
 {
-    function it_is_initializable()
+    function it_is_initializable(): void
     {
-        $this->shouldHaveType('Devfactory\Minify\Providers\JavaScript');
+        $this->shouldHaveType(JavaScript::class);
     }
 
-    function it_adds_one_file()
+    function it_adds_one_file(): void
     {
-        vfsStream::setup('js',null, array(
+        vfsStream::setup('js', null, [
             '1.js' => 'a',
-        ));
+        ]);
 
         $this->add(VfsStream::url('js'));
         $this->shouldHaveCount(1);
     }
 
-    function it_adds_multiple_files()
+    function it_adds_multiple_files(): void
     {
-        vfsStream::setup('root',null, array(
+        vfsStream::setup('root', null, [
             '1.js' => 'a',
             '2.js' => 'b',
-        ));
+        ]);
 
-        $this->add(array(
+        $this->add([
             VfsStream::url('root/1.js'),
             VfsStream::url('root/2.js')
-        ));
+        ]);
 
         $this->shouldHaveCount(2);
     }
 
-    function it_adds_custom_attributes()
+    function it_adds_custom_attributes(): void
     {
-        $this->tag('file', array('foobar' => 'baz', 'defer' => true))
+        $this->tag('file', ['foobar' => 'baz', 'defer' => true])
             ->shouldReturn('<script src="file" foobar="baz" defer></script>' . PHP_EOL);
     }
 
-    function it_adds_without_custom_attributes()
+    function it_adds_without_custom_attributes(): void
     {
-      $this->tag('file', array())
+        $this->tag('file')
             ->shouldReturn('<script src="file"></script>' . PHP_EOL);
     }
 
-    function it_throws_exception_when_file_not_exists()
+    function it_throws_exception_when_file_not_exists(): void
     {
-        $this->shouldThrow('Devfactory\Minify\Exceptions\FileNotExistException')
+        $this->shouldThrow(FileNotExistException::class)
             ->duringAdd('foobar');
     }
 
-    function it_should_throw_exception_when_buildpath_not_exist()
+    function it_should_throw_exception_when_buildpath_not_exist(): void
     {
-      $prophet = new Prophet;
-      $file = $prophet->prophesize('Illuminate\Filesystem\Filesystem');
-      $file->makeDirectory('dir_bar', 0775, true)->willReturn(false);
+        $prophet = new Prophet;
+        $file = $prophet->prophesize(Filesystem::class);
+        $file->makeDirectory('dir_bar', 0775, true)->willReturn(false);
 
-      $this->beConstructedWith(null, null, $file);
-      $this->shouldThrow('Devfactory\Minify\Exceptions\DirNotExistException')
+        $this->beConstructedWith(null, null, $file);
+        $this->shouldThrow(DirNotExistException::class)
             ->duringMake('dir_bar');
     }
 
-    function it_should_throw_exception_when_buildpath_not_writable()
+    function it_should_throw_exception_when_buildpath_not_writable(): void
     {
-        vfsStream::setup('js',0555, array());
+        vfsStream::setup('js', 0555);
 
-        $this->shouldThrow('Devfactory\Minify\Exceptions\DirNotWritableException')
+        $this->shouldThrow(DirNotWritableException::class)
             ->duringMake(vfsStream::url('js'));
     }
 
-    function it_minifies_multiple_files()
+    function it_minifies_multiple_files(): void
     {
-        vfsStream::setup('root',null, array(
-            'output' => array(),
+        vfsStream::setup('root', null, [
+            'output' => [],
             '1.js' => 'a',
             '2.js' => 'b',
-        ));
+        ]);
 
         $this->add(vfsStream::url('root/1.js'));
         $this->add(vfsStream::url('root/2.js'));
