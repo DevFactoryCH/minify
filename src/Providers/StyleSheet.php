@@ -1,37 +1,28 @@
-<?php
+<?php namespace Devfactory\Minify\Providers;
 
-namespace Devfactory\Minify\Providers;
-
-use Devfactory\Minify\Contracts\MinifyInterface;
 use CssMinifier;
+use Devfactory\Minify\Contracts\MinifyInterface;
+use Devfactory\Minify\Exceptions\FileNotExistException;
 
 class StyleSheet extends BaseProvider implements MinifyInterface
 {
     /**
-     *  The extension of the outputted file.
+     * The extension of the outputted file.
      */
     const EXTENSION = '.css';
 
-    /**
-     * @return string
-     */
-    public function minify()
+    public function minify(): string
     {
         $minified = new CssMinifier($this->appended);
 
         return $this->put($minified->getMinified());
     }
 
-    /**
-     * @param $file
-     * @param array $attributes
-     * @return string
-     */
-    public function tag($file, array $attributes = array())
+    public function tag(string $file, array $attributes = []): string
     {
-        $attributes = array('href' => $file, 'rel' => 'stylesheet') + $attributes;
+        $attributes = ['href' => $file, 'rel' => 'stylesheet'] + $attributes;
 
-        return "<link {$this->attributes($attributes)}>".PHP_EOL;
+        return "<link {$this->attributes($attributes)}>" . PHP_EOL;
     }
 
     /**
