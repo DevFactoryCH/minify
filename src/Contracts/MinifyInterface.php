@@ -1,16 +1,12 @@
 <?php namespace Devfactory\Minify\Contracts;
 
+use Devfactory\Minify\Exceptions\CannotSaveFileException;
+
 interface MinifyInterface {
-
     /**
-     * @return mixed
+     * @throws CannotSaveFileException
      */
-    public function minify();
+    public function minify(): string;
 
-    /**
-     * @param  string $file
-     * @param  array  $attributes
-     * @return mixed
-     */
-    public function tag($file, array $attributes);
+    public function tag(string $file, array $attributes): string;
 }
