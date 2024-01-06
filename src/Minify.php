@@ -71,7 +71,7 @@ class Minify
      * @throws CannotRemoveFileException
      * @throws FileNotExistException
      */
-    public function javascript(array|string $file, array $attributes = []): string
+    public function javascript(array|string $file, array $attributes = []): Minify
     {
         $this->initialiseJavascript($attributes);
 
@@ -87,7 +87,7 @@ class Minify
      * @throws CannotRemoveFileException
      * @throws FileNotExistException
      */
-    public function stylesheet(array|string $file, array $attributes = []): string
+    public function stylesheet(array|string $file, array $attributes = []): Minify
     {
         $this->initialiseStylesheet($attributes);
 
@@ -131,7 +131,7 @@ class Minify
      * @throws CannotRemoveFileException
      * @throws FileNotExistException
      */
-    private function assetDirHelper(string $ext, string $dir): string
+    private function assetDirHelper(string $ext, string $dir): Minify
     {
         $files = [];
 
@@ -203,14 +203,14 @@ class Minify
         return !in_array($this->environment, $this->config['ignore_environments']);
     }
 
-    public function withFullUrl(): static
+    public function withFullUrl(): Minify
     {
         $this->fullUrl = true;
 
         return $this;
     }
 
-    public function onlyUrl(): static
+    public function onlyUrl(): Minify
     {
         $this->onlyUrl = true;
 
