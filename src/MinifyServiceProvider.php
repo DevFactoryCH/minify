@@ -11,7 +11,7 @@ class MinifyServiceProvider extends ServiceProvider
     {
         $this->publishes([
             __DIR__ . '/config/minify.php' => config_path('minify.php'),
-        ]);
+        ], 'config');
     }
 
     /**
