@@ -129,33 +129,52 @@ abstract class BaseProvider implements Countable
     protected function appendFiles(): void
     {
         foreach ($this->files as $file) {
-            if ($this->checkExternalFile($file))
-            {
-                if (strpos($file, '//') === 0) $file = 'http:' . $file;
-
-                $headers = $this->headers;
-                foreach ($headers as $key => $value)
-                {
-                    $headers[$key] = $key . ': ' . $value;
-                }
-                $context = stream_context_create(array('http' => array(
-                    'ignore_errors' => true,
-                    'header' => implode("\r\n", $headers),
-                )));
-
-                $http_response_header = array(false);
-                $contents = file_get_contents($file, false, $context);
-
-                if (strpos($http_response_header[0], '200') === false)
-                {
-                    throw new FileNotExistException("File '{$file}' does not exist");
-                }
-            } else {
-                $contents = file_get_contents($file);
-            }
-
+            $contents = $this->getFileContents($file);
             $this->appended .= $contents . "\n";
         }
+    }
+
+    /**
+     * @throws FileNotExistException
+     */
+    protected function getFileContents(string $file): string
+    {
+        if ($this->checkExternalFile($file))
+        {
+            if (str_starts_with($file, '//')) $file = 'http:' . $file;
+
+            $headers = $this->headers;
+            foreach ($headers as $key => $value)
+            {
+                $headers[$key] = $key . ': ' . $value;
+            }
+            $context = stream_context_create(['http' => [
+                'ignore_errors' => true,
+                'header' => implode("\r\n", $headers),
+            ]]);
+
+            $http_response_header = [''];
+            $contents = file_get_contents($file, false, $context);
+
+            if (!str_contains($http_response_header[0], '200'))
+            {
+                throw new FileNotExistException("File '{$file}' does not exist");
+            }
+        }
+        else
+        {
+            $contents = file_get_contents($file);
+        }
+
+        return $contents;
+    }
+
+    protected function getPublicFileDirectory(string $file): string
+    {
+        $publicPath = function_exists('public_path') ? public_path() : '';
+        $fileWithoutPublicPath = str_replace($publicPath, '', $file);
+
+        return str_replace(basename($fileWithoutPublicPath), '', $fileWithoutPublicPath);
     }
 
     protected function checkExistingFiles(): bool
