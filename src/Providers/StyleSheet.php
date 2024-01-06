@@ -26,66 +26,53 @@ class StyleSheet extends BaseProvider implements MinifyInterface
     }
 
     /**
-     * Override appendFiles to solve css url path issue
-     * 
-     * @throws \Devfactory\Minify\Exceptions\FileNotExistException
+     * Override appendFiles to solve CSS URL path issue.
+     *
+     * @throws FileNotExistException
      */
-    protected function appendFiles()
+    protected function appendFiles(): void
     {
         foreach ($this->files as $file) {
-            if ($this->checkExternalFile($file)) {
-                if (strpos($file, '//') === 0) $file = 'http:'.$file;
-
-                $headers = $this->headers;
-                foreach ($headers as $key => $value) {
-                    $headers[$key] = $key.': '.$value;
-                }
-                $context = stream_context_create(array('http' => array(
-                        'ignore_errors' => true,
-                        'header' => implode("\r\n", $headers),
-                )));
-
-                $http_response_header = array(false);
-
-
-                if (strpos($http_response_header[0], '200') === false) {
-                    throw new FileNotExistException("File '{$file}' does not exist");
-                }
-            }
-            $contents = $this->urlCorrection($file);
-            $this->appended .= $contents."\n";
+            $fileContent = $this->getFileContentWithCorrectedUrls($file);
+            $this->appended .= $fileContent . "\n";
         }
     }
 
     /**
-     * Css url path correction
-     * 
-     * @param string $file
-     * @return string
+     * CSS URL path correction.
+     *
+     * @throws FileNotExistException
      */
-    public function urlCorrection($file)
+    public function getFileContentWithCorrectedUrls(string $file): string
     {
-        $folder             = str_replace(public_path(), '', $file);
-        $folder             = str_replace(basename($folder), '', $folder);
-        $content            = file_get_contents($file);
-        $contentReplace     = [];
+        $fileDirectory = $this->getPublicFileDirectory($file);
+        $fileContent = $this->getFileContents($file);
+
+        return $this->contentUrlCorrection($fileDirectory, $fileContent);
+    }
+
+    /**
+     * CSS content URL path correction.
+     */
+    private function contentUrlCorrection(string $fileDirectory, string $fileContent): string
+    {
+        $contentReplace = [];
         $contentReplaceWith = [];
-        preg_match_all('/url\(([\s])?([\"|\'])?(.*?)([\"|\'])?([\s])?\)/i', $content, $matches, PREG_PATTERN_ORDER);
+        preg_match_all('/url\((\s)?([\"|\'])?(.*?)([\"|\'])?(\s)?\)/i', $fileContent, $matches, PREG_PATTERN_ORDER);
         if (!count($matches)) {
-            return $content;
+            return $fileContent;
         }
         foreach ($matches[0] as $match) {
-            if (strpos($match, "'") != false) {
-                $contentReplace[]     = $match;
-                $contentReplaceWith[] = str_replace('url(\'', 'url(\''.$folder, $match);
-            } elseif (strpos($match, '"') !== false) {
-                $contentReplace[]     = $match;
-                $contentReplaceWith[] = str_replace('url("', 'url("'.$folder, $match);
+            $contentReplace[] = $match;
+            if (strpos($match, "'")) {
+                $contentReplaceWith[] = str_replace('url(\'', 'url(\''.$fileDirectory, $match);
+            } elseif (str_contains($match, '"')) {
+                $contentReplaceWith[] = str_replace('url("', 'url("'.$fileDirectory, $match);
             } else {
-                $contentReplace[]     = $match;
-                $contentReplaceWith[] = str_replace('url(', 'url('.$folder, $match);
+                $contentReplaceWith[] = str_replace('url(', 'url('.$fileDirectory, $match);
             }
         }
-        return str_replace($contentReplace, $contentReplaceWith, $content);
+
+        return str_replace($contentReplace, $contentReplaceWith, $fileContent);
     }
 }
