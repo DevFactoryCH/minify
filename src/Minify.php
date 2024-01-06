@@ -71,7 +71,7 @@ class Minify
      * @throws CannotRemoveFileException
      * @throws FileNotExistException
      */
-    public function javascript(string $file, array $attributes = []): string
+    public function javascript(array|string $file, array $attributes = []): string
     {
         $this->initialiseJavascript($attributes);
 
@@ -87,7 +87,7 @@ class Minify
      * @throws CannotRemoveFileException
      * @throws FileNotExistException
      */
-    public function stylesheet(string $file, array $attributes = []): string
+    public function stylesheet(array|string $file, array $attributes = []): string
     {
         $this->initialiseStylesheet($attributes);
 
