@@ -29,7 +29,7 @@ class Minify
 
     private bool $onlyUrl = false;
 
-    private bool $buildExtension;
+    private string $buildExtension;
 
     /**
      * @throws InvalidArgumentException
