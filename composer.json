@@ -13,8 +13,8 @@
     "php": ">=7.2.0",
     "tedivm/jshrink": "~1.0",
     "natxet/CssMin": "3.*",
-    "illuminate/filesystem": "~5.0|^6.0|^7.0|^8.0|^9.0|^10.0",
-    "illuminate/support": "~5.0|^6.0|^7.0|^8.0|^9.0|^10.0"
+    "illuminate/filesystem": "~5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+    "illuminate/support": "~5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0"
   },
   "require-dev": {
     "phpspec/phpspec": "2.0.0",
